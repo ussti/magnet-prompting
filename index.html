@@ -322,9 +322,23 @@ a.nm{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1.5px s
   border-bottom:1px solid var(--mark);padding-bottom:4px}
 .nextline span{font-size:14px}
 .chk{list-style:none;margin-top:20px;border-top:1px solid var(--line)}
-.chk li{position:relative;padding:13px 0 13px 30px;border-bottom:1px solid var(--line);
-  font-size:15.5px;line-height:1.5}
-.chk li:before{content:"\2713";position:absolute;left:0;top:13px;color:var(--mark);font-weight:700}
+.chk li{border-bottom:1px solid var(--line)}
+.chk label{display:flex;align-items:flex-start;gap:14px;padding:13px 2px;cursor:pointer;
+  font-size:15.5px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+.chk input{position:absolute;opacity:0;width:0;height:0}
+.chk .box{flex:0 0 auto;width:19px;height:19px;margin-top:2px;border:1px solid var(--ink);
+  background:transparent;position:relative}
+.chk .box:before{content:"\2713";position:absolute;left:0;right:0;top:-2px;text-align:center;
+  font-size:14px;font-weight:700;color:var(--paper);opacity:0}
+.chk input:checked + .box{background:var(--mark);border-color:var(--mark)}
+.chk input:checked + .box:before{opacity:1}
+.chk input:focus-visible + .box{outline:2px solid var(--mark);outline-offset:2px}
+.chk input:checked ~ .txt{color:var(--ink-soft)}
+.chkbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0 30px;
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.chkbar button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--mark-text);
+  background:none;border:none;border-bottom:1px solid var(--mark);padding:0 0 3px;cursor:pointer}
 .srcnote{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;
   line-height:1.6;color:var(--ink-soft)}
 .srcnote b{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;
@@ -729,7 +743,8 @@ a.nm{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1.5px s
     <h2>Шпаргалка</h2>
   </div>
   <p>Проверь по ней любой запрос, который не сработал с первого раза.</p>
-  <ul class="chk"><li>Задача названа в первой строке.</li><li>Сказано, для кого и зачем.</li><li>Есть образец нужного формата или интонации.</li><li>Задана структура ответа: разделы, объем, вид вывода.</li><li>Сказано, с чьей позиции отвечать, если роль важна.</li><li>Сложное разбито на шаги.</li><li>На сложном есть просьба показать ход мысли.</li><li>Есть разрешение сказать «не знаю».</li><li>Правки сформулированы списком, а не словом «лучше».</li><li>Контекст повторен, если разговор новый.</li></ul>
+  <ul class="chk" id="chk"><li><label><input type="checkbox" data-chk="1"><span class="box"></span><span class="txt">Задача названа в первой строке.</span></label></li><li><label><input type="checkbox" data-chk="2"><span class="box"></span><span class="txt">Сказано, для кого и зачем.</span></label></li><li><label><input type="checkbox" data-chk="3"><span class="box"></span><span class="txt">Есть образец нужного формата или интонации.</span></label></li><li><label><input type="checkbox" data-chk="4"><span class="box"></span><span class="txt">Задана структура ответа: разделы, объем, вид вывода.</span></label></li><li><label><input type="checkbox" data-chk="5"><span class="box"></span><span class="txt">Сказано, с чьей позиции отвечать, если роль важна.</span></label></li><li><label><input type="checkbox" data-chk="6"><span class="box"></span><span class="txt">Сложное разбито на шаги.</span></label></li><li><label><input type="checkbox" data-chk="7"><span class="box"></span><span class="txt">На сложном есть просьба показать ход мысли.</span></label></li><li><label><input type="checkbox" data-chk="8"><span class="box"></span><span class="txt">Есть разрешение сказать «не знаю».</span></label></li><li><label><input type="checkbox" data-chk="9"><span class="box"></span><span class="txt">Правки сформулированы списком, а не словом «лучше».</span></label></li><li><label><input type="checkbox" data-chk="10"><span class="box"></span><span class="txt">Контекст повторен, если разговор новый.</span></label></li></ul>
+  <div class="chkbar"><span id="chkcount">отмечено 0 из 10</span><button type="button" id="chkreset">снять все</button></div>
   <p><b>Коротко.</b> Если запрос не сработал, почти всегда в нем не хватает одной из этих десяти строк. Начни сверху и иди вниз — обычно ломается на второй или четвертой.</p>
  </div>
 </section>
@@ -932,5 +947,32 @@ a.nm{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1.5px s
 })();
 </script>
 
+<script>
+(function(){
+  var list = document.getElementById('chk');
+  if (!list) return;
+  var boxes = [].slice.call(list.querySelectorAll('input[type=checkbox]'));
+  var out = document.getElementById('chkcount');
+  var key = 'prompting-checklist';
+  function store(){
+    try { localStorage.setItem(key, boxes.map(function(b){ return b.checked ? '1' : '0'; }).join('')); }
+    catch (e) {}
+  }
+  function paint(){
+    var n = boxes.filter(function(b){ return b.checked; }).length;
+    out.textContent = 'отмечено ' + n + ' из ' + boxes.length;
+  }
+  try {
+    var saved = localStorage.getItem(key) || '';
+    boxes.forEach(function(b, i){ b.checked = saved.charAt(i) === '1'; });
+  } catch (e) {}
+  paint();
+  boxes.forEach(function(b){ b.addEventListener('change', function(){ paint(); store(); }); });
+  document.getElementById('chkreset').addEventListener('click', function(){
+    boxes.forEach(function(b){ b.checked = false; });
+    paint(); store();
+  });
+})();
+</script>
 </body>
 </html>
